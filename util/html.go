@@ -34,26 +34,49 @@ func GetHtmlNodeFromUrl(url string) (*html.Node, error) {
 	return doc, nil
 }
 
-type DataRetrieverFunc func(string) error
+// func to retrieve data from table, first arg is data, second arg is total column count,
+// implementation is responsible to maintain the column index inside the method
+type DataRetrieverFunc func(string, int) error
 
 func TraverseJacocoHtmlTable(table *html.Node, dataRetrieverFunc DataRetrieverFunc) error {
 	// Iterate over rows and columns
+	columnCount := 0
 	for row := table.FirstChild; row != nil; row = row.NextSibling {
-		if row.Type == html.ElementNode && row.Data == "tbody" {
-			if err := findJacocoTableTr(row, dataRetrieverFunc); err != nil {
-				return err
+		if row.Type == html.ElementNode && row.Data == "thead" {
+			// check how many columns are there
+			for col := row.FirstChild; col != nil; col = col.NextSibling {
+				if col.Type == html.ElementNode && col.Data == "tr" {
+					for trCol := col.FirstChild; trCol != nil; trCol = trCol.NextSibling {
+						if trCol.Type == html.ElementNode && (trCol.Data == "td" || trCol.Data == "th") {
+							columnCount++
+						}
+					}
+				}
+			}
+			break
+		}
+	}
+	if columnCount == 0 {
+		return fmt.Errorf("no column found in the table")
+	}
+	for row := table.FirstChild; row != nil; row = row.NextSibling {
+		if row.Type == html.ElementNode {
+			if row.Data == "tbody" {
+				if err := findJacocoTableTr(row, dataRetrieverFunc, columnCount); err != nil {
+					return err
+				}
 			}
 		}
 	}
 	return nil
 }
 
-func findJacocoTableTr(tbody *html.Node, dataRetrieverFunc DataRetrieverFunc) error {
+func findJacocoTableTr(tbody *html.Node, dataRetrieverFunc DataRetrieverFunc, totalColumnCount int) error {
 	for col := tbody.FirstChild; col != nil; col = col.NextSibling {
 		if col.Type == html.ElementNode && col.Data == "tr" {
 			for trCol := col.FirstChild; trCol != nil; trCol = trCol.NextSibling {
 				if trCol.Type == html.ElementNode && (trCol.Data == "td" || trCol.Data == "th") {
-					if err := dataRetrieverFunc(renderNode(trCol)); err != nil {
+					if err := dataRetrieverFunc(renderNode(trCol), totalColumnCount); err != nil {
 						return err
 					}
 				}

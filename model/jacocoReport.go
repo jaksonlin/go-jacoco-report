@@ -129,7 +129,7 @@ func createJacocoReportRecords(table *html.Node) ([]*JacocoReportRecord, error) 
 	var records []*JacocoReportRecord = make([]*JacocoReportRecord, 0)
 	recordIndex := 0
 	tableColIndex := 0
-	err := util.TraverseJacocoHtmlTable(table, func(data string) error {
+	err := util.TraverseJacocoHtmlTable(table, func(data string, totalColumnCount int) error {
 		contentDetails := strings.Split(data, ";")
 		text := ""
 		href := ""
@@ -172,7 +172,7 @@ func createJacocoReportRecords(table *html.Node) ([]*JacocoReportRecord, error) 
 			records[recordIndex].NumberOfClass = text
 		}
 		tableColIndex += 1
-		if tableColIndex == 13 {
+		if tableColIndex == totalColumnCount {
 			recordIndex += 1
 			tableColIndex = 0
 		}
