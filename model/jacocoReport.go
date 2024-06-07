@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"regexp"
 	"reporter/util"
+	"strconv"
 	"strings"
 	"time"
 
@@ -19,19 +20,71 @@ type JacocoReport struct {
 }
 
 type JacocoReportRecord struct {
-	Element         string        `json:"element"`
-	Href            string        `json:"href"`
-	InstructionsCov string        `json:"instruct_coverage"`
-	BranchCov       string        `json:"branch_coverage"`
-	MissedBranch    string        `json:"missed_branch"`
-	Complexity      string        `json:"complexity"`
-	MissedMethod    string        `json:"missed_method"`
-	NumberOfMethod  string        `json:"number_of_method"`
-	MissedLine      string        `json:"missed_line"`
-	NumberOfLine    string        `json:"number_of_line"`
-	MissedClass     string        `json:"missed_class"`
-	NumberOfClass   string        `json:"number_of_class"`
-	SubReport       *JacocoReport `json:"sub_report"`
+	Element             string        `json:"element"`
+	Href                string        `json:"href"`
+	InstructionsCov     string        `json:"instruct_coverage"`
+	BranchCov           string        `json:"branch_coverage"`
+	MissedBranch        string        `json:"missed_branch"`
+	Complexity          string        `json:"complexity"`
+	MissedMethod        string        `json:"missed_method"`
+	NumberOfMethod      string        `json:"number_of_method"`
+	MissedLine          string        `json:"missed_line"`
+	NumberOfLine        string        `json:"number_of_line"`
+	MissedClass         string        `json:"missed_class"`
+	NumberOfClass       string        `json:"number_of_class"`
+	SubReport           *JacocoReport `json:"sub_report"`
+	MissedBranchCount   uint64
+	ComplexityCount     uint64
+	MissedMethodCount   uint64
+	NumberOfMethodCount uint64
+	MissedLineCount     uint64
+	NumberOfLineCount   uint64
+	MissedClassCount    uint64
+	NumberOfClassCount  uint64
+}
+
+func (j *JacocoReportRecord) ConvertNumeric() error {
+	c, err := strconv.ParseUint(j.MissedBranch, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.MissedBranchCount = c
+	c, err = strconv.ParseUint(j.Complexity, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.ComplexityCount = c
+	c, err = strconv.ParseUint(j.MissedMethod, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.MissedMethodCount = c
+	c, err = strconv.ParseUint(j.NumberOfMethod, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.NumberOfMethodCount = c
+	c, err = strconv.ParseUint(j.MissedLine, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.MissedLineCount = c
+	c, err = strconv.ParseUint(j.NumberOfLine, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.NumberOfLineCount = c
+	c, err = strconv.ParseUint(j.MissedClass, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.MissedClassCount = c
+	c, err = strconv.ParseUint(j.NumberOfClass, 10, 64)
+	if err != nil {
+		return err
+	}
+	j.NumberOfClassCount = c
+	return nil
 }
 
 var titleRegex *regexp.Regexp = regexp.MustCompile(`<h1>(.*)</h1>`)
