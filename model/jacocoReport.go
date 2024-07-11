@@ -228,6 +228,10 @@ func createJacocoReportRecords(table *html.Node) ([]*JacocoReportRecord, error) 
 		if tableColIndex == totalColumnCount {
 			recordIndex += 1
 			tableColIndex = 0
+			err := records[recordIndex].ConvertNumeric()
+			if err != nil {
+				fmt.Printf("convert numeric failed: %s\n", err)
+			}
 		}
 		return nil
 	})
@@ -235,4 +239,55 @@ func createJacocoReportRecords(table *html.Node) ([]*JacocoReportRecord, error) 
 		return nil, err
 	}
 	return records, nil
+}
+
+func (j *JacocoReport) GetHighComplexityFunctions(thredshold uint64) []*JacocoReportRecord {
+	var highComplexityFunctions []*JacocoReportRecord = make([]*JacocoReportRecord, 0)
+	searchList := list.New()
+	for _, record := range j.ReportContent {
+		searchList.PushBack(record)
+	}
+	for searchList.Len() > 0 {
+		searchItem := searchList.Front().Value.(*JacocoReportRecord)
+		searchList.Remove(searchList.Front())
+		if strings.Contains(searchItem.Href, ".java.html#") && searchItem.ComplexityCount > thredshold {
+			highComplexityFunctions = append(highComplexityFunctions, searchItem)
+		}
+		if searchItem.SubReport != nil {
+			for _, record := range searchItem.SubReport.ReportContent {
+				searchList.PushBack(record)
+			}
+		}
+	}
+	return highComplexityFunctions
+}
+
+func (j *JacocoReport) GetLowCoverageClassess(thredshold float64) []*JacocoReportRecord {
+	var lowCoverageClassess []*JacocoReportRecord = make([]*JacocoReportRecord, 0)
+	searchList := list.New()
+	for _, record := range j.ReportContent {
+		searchList.PushBack(record)
+	}
+	for searchList.Len() > 0 {
+		searchItem := searchList.Front().Value.(*JacocoReportRecord)
+		searchList.Remove(searchList.Front())
+		if searchItem.SubReport != nil && len(searchItem.SubReport.ReportContent) > 0 {
+
+			if strings.Contains(searchItem.SubReport.ReportContent[0].Href, ".java.html#") {
+				if searchItem.NumberOfLineCount > 0 {
+					coverage := 1 - float64(searchItem.MissedLineCount)/float64(searchItem.NumberOfLineCount)
+					if coverage < thredshold {
+						lowCoverageClassess = append(lowCoverageClassess, searchItem)
+					}
+				}
+			} else {
+				for _, record := range searchItem.SubReport.ReportContent {
+					searchList.PushBack(record)
+				}
+			}
+
+		}
+
+	}
+	return lowCoverageClassess
 }
